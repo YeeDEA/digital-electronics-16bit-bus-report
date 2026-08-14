@@ -7,7 +7,7 @@
 > **제출 기한**: 12월 3일 (화요일) / 2인 1조
 > **공통 조건**: Supply Voltage **1.1 V**, Temperature **25 ℃**, 45 nm 공정 (unit inverter: NMOS 1.1 μm / PMOS 2.2 μm)
 >
-> ※ 본 문서는 유실된 원본 보고서(Google Docs "digital")를 수업 중 촬영한 사진 70장 전수 판독과 강의 전사 기록으로 복원한 것입니다. 사진 70장 전량을 1차 판독한 뒤, 핵심 수치 41건에 대해 확대(zoom) 재검증을 수행했습니다. 사진에서 직접 판독·검증된 수치는 그대로 옮겼고, 판독 불가 구간은 **[복원]** 표시와 함께 설계 논리에 근거해 재구성했으며, 신뢰도가 낮은 판독은 **(저신뢰)** 로 표시했습니다.
+> ※ 본 문서는 **직접 수행한 프로젝트**의 원본 보고서(Google Docs "digital") 파일이 유실되어, 당시 화면을 촬영해 둔 사진 70장 전수 판독과 수업 전사 기록으로 복원한 것입니다. 사진 70장 전량을 1차 판독한 뒤, 핵심 수치 41건에 대해 확대(zoom) 재검증을 수행했습니다. 사진에서 직접 판독·검증된 수치는 그대로 옮겼고, 판독 불가 구간은 **[복원]** 표시와 함께 설계 논리에 근거해 재구성했으며, 신뢰도가 낮은 판독은 **(저신뢰)** 로 표시했습니다.
 
 ---
 
@@ -710,7 +710,7 @@ $$P_{total} = \alpha C_{total} V_{DD}^2 f + I_{leak}V_{DD}$$
 5. **Self-loading**: W를 10배 이상 키워도 gate 자체 delay는 RC 모델 예측대로 거의 일정 (R↓∝1/W, C↑∝W).
 6. **Gate cap 추출**: C_gate를 100 aF~1 fF까지 100 aF 간격으로 parametric sweep (ADE Explorer 파형 패밀리 100.0a~1.0f 확인), MOS gate 부하 노드와 slope가 일치하는 값 탐색 → **C_gate ≈ 0.2 fF** (dx=1.5687ps에서 매칭). Gate cap ∝ W이므로 fF/μm로 정규화해 두면 임의 width에 환산 가능.
 7. **Delay가 cap에 정비례하지 않는 이유**: 출력 노드에 인버터 자체의 **diffusion(drain) cap**이 함께 달려 있기 때문 — delay는 (parasitic + load) 두 성분으로 구성된다는 수업 내용의 실증.
-8. **이후 flow**: effective resistance(전류 측정) → τ → logical effort 손계산 delay에 τ를 곱해 시뮬레이션과 비교. 실제 선배 프로젝트는 이 비교에서 **오차 2.77%** (368.4 ps vs 378.6 ps)를 달성했다.
+8. **이후 flow**: effective resistance(전류 측정) → τ → logical effort 손계산 delay에 τ를 곱해 시뮬레이션과 비교. 본 프로젝트는 이 비교에서 **오차 2.77%** (368.4 ps vs 378.6 ps)를 달성했다.
 
 ---
 
@@ -754,7 +754,7 @@ $$P_{total} = \alpha C_{total} V_{DD}^2 f + I_{leak}V_{DD}$$
 | 10 | 그림 1.6 추세선 정확한 수식 | §1.1 | 〃 (기울기 ~1.1ps/fF, 절편 ~10ps 수준만 판독) |
 | 11 | 각종 schematic/waveform 그림 원본 | 전체 | 원본 문서의 이미지 필요 |
 
-**가장 효과적인 복구 경로**: 사진에서 원본 Google Docs의 URL이 판독되었다 — `docs.google.com/document/d/1ekEKe872hraCTtUVZlrMIZP7Tx5aZMwsZjlPmX8MfM0/edit`. 이 문서는 선배(발표자) 계정 소유이므로, **열람 권한 또는 사본을 요청**하는 것이 재촬영보다 빠르고 정확하다. 과제 명세 원본은 `2024_digital_microelectronics_project_rev.pdf` (LearnUs 또는 발표자 제공)로 확보 가능하다.
+**복구 경로 검토 결과**: 사진에서 원본 Google Docs의 URL까지는 판독되었으나, 해당 계정 접근이 불가하여 원본 문서는 회수하지 못했다. 따라서 본 문서(사진 전수 판독 기반 복원본)가 최종본이며, 위 결측 항목은 시뮬레이션 재현(별도 가이드 참조)으로 재생성하는 것을 원칙으로 한다.
 
 ---
 
