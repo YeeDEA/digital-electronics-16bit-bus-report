@@ -2,3 +2,5 @@
 KakaoTalk_*.jpg
 KakaoTalk_*.png
 _archive/
+__pycache__/
+*.pyc
