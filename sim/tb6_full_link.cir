@@ -1,0 +1,55 @@
+* TB-6: full link  source -> repeated wire (N=4) -> destination MUX  (report §4)
+* End-to-end delay from source input to destination output with 100fF load.
+.include 45nm_HP.pm
+.include lib_gates.sp
+.param VDD=1.1
+
+.subckt wseg a b
+R1 a  m1 1.667k
+R2 m1 m2 1.667k
+R3 m2 b  1.667k
+C0 a  0 1.667f
+C1 m1 0 3.333f
+C2 m2 0 3.333f
+C3 b  0 1.667f
+.ends
+
+.subckt rpt in out vdd vss
+Xa in  mid vdd vss INV wn=0.54u wp=2.16u
+Xb mid out vdd vss INV wn=0.54u wp=2.16u
+.ends
+
+VDD vdd 0 {VDD}
+VSSS vss 0 0
+VC   c    0 PULSE(0 {VDD} 1n 20p 20p 6n 12n)
+VONE one  0 {VDD}
+VZERO zero 0 0
+
+* ---- SOURCE: NAND2 - NOR2 - NAND4 - NOR2 (report Table 4.3) ----
+XS1 c one s1 vdd vss NAND2 wn=2.20u wp=2.16u
+XS2 zero s1 s2 vdd vss NOR2 wn=2.13u wp=8.37u
+XS3 s2 one one one s3 vdd vss NAND4 wn=13.68u wp=6.72u
+XS4 zero s3 drv vdd vss NOR2 wn=0.41u wp=1.63u
+
+* ---- WIRE: 200um, N=4 segments with repeaters ----
+XW1 drv s1w wseg
+XR1 s1w d2w rpt vdd vss
+XW2 d2w s2w wseg
+XR2 s2w d3w rpt vdd vss
+XW3 d3w s3w wseg
+XR3 s3w d4w rpt vdd vss
+XW4 d4w rcv wseg
+
+* ---- DESTINATION: NAND3 - NAND4 - NAND3 - NAND4 (report Table 4.6) ----
+XD1 rcv one one d1 vdd vss NAND3 wn=2.38u wp=1.58u
+XD2 d1 one one one d2 vdd vss NAND4 wn=6.16u wp=3.03u
+XD3 d2 one one d3 vdd vss NAND3 wn=10.71u wp=7.01u
+XD4 d3 one one one out vdd vss NAND4 wn=27.55u wp=13.53u
+
+CLOAD out 0 100f
+
+.tran 1p 36n
+.meas tran tpdr TRIG v(c) VAL=0.55 RISE=2 TARG v(out) VAL=0.55 RISE=2
+.meas tran tpdf TRIG v(c) VAL=0.55 FALL=2 TARG v(out) VAL=0.55 FALL=2
+.meas tran tpd  PARAM='(tpdr+tpdf)/2'
+.end

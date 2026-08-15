@@ -1,0 +1,40 @@
+* TB-0d: FO1 & FO4 delay -> tau, p_inv (report §1.4)
+* tau = (tFO4 - tFO1)/3,  p_inv = tFO1/tau - 1
+.include 45nm_HP.pm
+.param VDD=1.1
+
+.subckt inv in out vdd vss m=1
+MP out in vdd vdd pmos W={2.2u*m} L=45n
+MN out in vss vss nmos W={1.1u*m} L=45n
+.ends
+
+VDD vdd 0 {VDD}
+VIN in 0 PULSE(0 {VDD} 1n 20p 20p 2n 4n)
+
+* branch 1: shaping x3 -> DUT -> FO1 load -> secondary load
+X11 in  n11 vdd 0 inv
+X12 n11 n12 vdd 0 inv
+X13 n12 n13 vdd 0 inv
+XD1 n13 n14 vdd 0 inv          ; DUT (FO1)
+XL1 n14 n15 vdd 0 inv m=1
+XL1b n15 n16 vdd 0 inv m=4
+
+* branch 2: shaping x3 -> DUT -> FO4 load -> secondary load
+X21 in  n21 vdd 0 inv
+X22 n21 n22 vdd 0 inv
+X23 n22 n23 vdd 0 inv
+XD2 n23 n24 vdd 0 inv          ; DUT (FO4)
+XL2 n24 n25 vdd 0 inv m=4
+XL2b n25 n26 vdd 0 inv m=16
+
+.tran 1p 12n
+
+.meas tran tFO1r TRIG v(n13) VAL=0.55 FALL=2 TARG v(n14) VAL=0.55 RISE=2
+.meas tran tFO1f TRIG v(n13) VAL=0.55 RISE=2 TARG v(n14) VAL=0.55 FALL=2
+.meas tran tFO4r TRIG v(n23) VAL=0.55 FALL=2 TARG v(n24) VAL=0.55 RISE=2
+.meas tran tFO4f TRIG v(n23) VAL=0.55 RISE=2 TARG v(n24) VAL=0.55 FALL=2
+.meas tran tFO1 PARAM='(tFO1r+tFO1f)/2'
+.meas tran tFO4 PARAM='(tFO4r+tFO4f)/2'
+.meas tran tau  PARAM='(tFO4-tFO1)/3'
+.meas tran pinv PARAM='tFO1/tau - 1'
+.end

@@ -334,9 +334,15 @@ R_driver와 C_driver는 네 번째 stage인 NOR2 gate의 output capacitance와 e
 
 Elmore delay로 계산한 이론값:
 
-$$t_{pd-nrwire}(theoretical) = (C_{driver} + \frac{C_w}{2}l)R_{driver} + (C_{receiver} + \frac{C_w}{2}l)(R_w l + R_{driver}) = 537.80\,ps$$
+$$t_{pd-nrwire}(theoretical) = (C_{driver} + \frac{C_w}{2}l)R_{driver} + (C_{receiver} + \frac{C_w}{2}l)(R_w l + R_{driver})$$
 
-$$t_{pd-total}(theoretical) = 378.6\,ps + 537.80\,ps = 916.4\,ps$$
+각 항을 대입하면
+
+$$= (10.839 + 20)\,fF \times 929.338\,\Omega + (7.226 + 20)\,fF \times 20929.338\,\Omega = 28.7 + 569.8 = 598.5\,ps$$
+
+$$t_{pd-total}(theoretical) = 378.6\,ps + 598.5\,ps = 977.1\,ps$$
+
+Wire 하나가 추가되면서 이론 delay가 source 단독 대비 2.6배로 늘어난다. 배선의 RC가 소자 delay를 압도한다는 점을 정량적으로 보여주는 결과이며, 이것이 repeater 삽입이 필요한 이유이다.
 
 ## 3.3 Non-Repeated Delay Simulation
 
@@ -351,7 +357,7 @@ $$t_{pd-total}(theoretical) = 378.6\,ps + 537.80\,ps = 916.4\,ps$$
 
 > **t_pd (simulated) = 1030.5 ps**
 
-이는 Elmore delay로 계산한 total delay와 **12.5%의 오차**를 갖는 값이다. Elmore delay 자체가 근사값이며 mosfet의 capacitance, P_inv 및 t_pd,inv 값을 모두 측정한 값을 사용하였기 때문에 이와 같은 오차가 나타났다고 생각된다. 이를 감안하였을 때 약 10%대의 오차율은 이론과 실제가 유사한 경향을 가진다는 것을 뒷받침한다.
+이는 Elmore delay로 계산한 total delay 977.1 ps와 **5.2%의 오차**를 갖는 값이다. Elmore delay 자체가 근사값이며 mosfet의 capacitance, p_inv 및 t_pd,inv 값을 모두 측정치로 사용하였음을 감안하면, 5%대의 오차는 이론과 실제가 잘 일치함을 뒷받침한다. 소자만 있을 때(2.77%)보다 오차가 커진 것은 배선을 단일 π로 등가화한 근사가 추가로 개입했기 때문이다.
 
 ## 3.4 Repeated Delay Estimation
 
@@ -390,7 +396,9 @@ Simulation 결과 repeater를 사용하지 않았을 때와 비교하여 delay�
 
 $$t_{pd-total}(theoretical) = 378.6\,ps + 289.578\,ps = 668.17\,ps$$
 
-이는 simulation 결과와 **14.9%의 오차율**을 가진다. 직접 측정한 값들을 사용하여 계산하였고 Elmore delay 자체가 근사식임을 고려하면, 약 15%의 오차율은 이론과 실제가 유사한 경향을 가진다는 것을 뒷받침한다.
+이는 simulation 결과 762.2 ps와 **14.1%의 오차율**을 가진다. 이론 모델이 repeater 삽입 지점의 부하를 이상적으로 가정하는 반면 실제 회로에서는 각 inverter의 diffusion cap과 입력 slew가 누적되므로, 이론값이 실측보다 낙관적으로 나오는 것은 예상되는 경향이다.
+
+또한 이론 모델에서 N을 스윕하면 N=4와 N=5의 delay 차이가 1% 이내로 거의 평탄하며(286.7 ps vs 283.5 ps), 실측에서 N=4가 최소(762.2 ps < 767.6 ps)로 나온 것과 일관된다. 즉 최적점 부근에서 delay가 N에 둔감하다는 이론적 성질이 실측으로도 확인되었다.
 
 ## 3.6 Crosstalk
 
@@ -508,8 +516,8 @@ $$\hat{f} = F^{\frac{1}{4}} = 107.9^{\frac{1}{4}} = 3.223$$
 | 설계 단계 | t_pd (simulated) | 비고 |
 |:----------------------------|:--------:|:--------------------------------------|
 | Source 단독 (wire 미포함) | 368.4 ps | 이론값 378.6 ps, 오차 2.77% |
-| + Non-repeated wire (l=200μm) | 1030.5 ps | 이론값 916.4 ps, 오차 12.5% |
-| + Repeater (N=4) | 762.2 ps | 이론값 668.17 ps, 오차 14.9%, 약 250 ps 개선 (N=5는 767.6 ps) |
+| + Non-repeated wire (l=200μm) | 1030.5 ps | 이론값 977.1 ps, 오차 5.2% |
+| + Repeater (N=4) | 762.2 ps | 이론값 668.17 ps, 오차 14.1%, 약 270 ps 개선 (N=5는 767.6 ps) |
 | + Source/Destination 재설계 (NAND5 MUX) | 763.2 ps | 오히려 1.0 ps 증가 — NAND5 input 과다 |
 | + NAND3/NAND4 MUX sizing 재최적화 | **756.4 ps** | 5.8 ps 추가 개선 (최종) |
 

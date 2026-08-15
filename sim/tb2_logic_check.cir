@@ -1,0 +1,63 @@
+* TB-2: functional verification of the bus logic (report §2.7)
+* Verifies:  c[i] = (a[i] XNOR b[i]);  y = (all c == 1) ? a : 0;  D = mux(y, s[3:0])
+* Reduced 4-bit model of the 16-bit system (same logic, tractable to inspect).
+.include 45nm_HP.pm
+.include lib_gates.sp
+.param VDD=1.1
+
+*** XNOR2 built from static CMOS (a XNOR b) ***
+.subckt XNOR2 a b out vdd vss
+Xi1 a  abar vdd vss INV
+Xi2 b  bbar vdd vss INV
+* out = (a&b) | (~a&~b)  -> NAND of (a nand b) and (abar nand bbar) style
+Xn1 a b t1 vdd vss NAND2
+Xn2 abar bbar t2 vdd vss NAND2
+Xn3 t1 t2 out vdd vss NAND2
+.ends
+
+VDD vdd 0 {VDD}
+VSSS vss 0 0
+
+* stimulus: a0 toggles every 20n from 20n; a1 toggles every 20n from 30n; s0b every 20n
+Va0 a0 0 PULSE(0 {VDD} 20n 100p 100p 20n 40n)
+Va1 a1 0 PULSE(0 {VDD} 30n 100p 100p 20n 40n)
+Vb0 b0 0 {VDD}
+Vb1 b1 0 {VDD}
+Vs0b s0b 0 PULSE(0 {VDD} 40n 100p 100p 20n 40n)
+Vs1  s1  0 0
+
+* --- comparator: c[i] = a[i] XNOR b[i] ---
+Xc0 a0 b0 c0 vdd vss XNOR2
+Xc1 a1 b1 c1 vdd vss XNOR2
+
+* --- 1's detector: cAll = c0 & c1  (NAND + INV) ---
+Xd1 c0 c1 nAll vdd vss NAND2
+Xd2 nAll cAll vdd vss INV
+
+* --- gating: y[i] = a[i] & cAll ---
+Xg0 a0 cAll ny0 vdd vss NAND2
+Xg0i ny0 y0 vdd vss INV
+Xg1 a1 cAll ny1 vdd vss NAND2
+Xg1i ny1 y1 vdd vss INV
+
+* --- 2:1 mux (s0b selects y0 / y1) ---
+Xs0 s0b s0 vdd vss INV
+Xm1 y0 s0  m1 vdd vss NAND2
+Xm2 y1 s0b m2 vdd vss NAND2
+Xm3 m1 m2 D vdd vss NAND2
+
+.tran 100p 120n
+
+.control
+run
+echo ""
+echo "  time     a0    a1   s0b   cAll    D    (expect D = s0b?y1:y0 when cAll=1, else 0)"
+foreach t 10n 30n 50n 70n 90n 110n
+  meas tran va0   FIND v(a0)   AT=$t
+  meas tran va1   FIND v(a1)   AT=$t
+  meas tran vs0b  FIND v(s0b)  AT=$t
+  meas tran vcall FIND v(cAll) AT=$t
+  meas tran vD    FIND v(D)    AT=$t
+end
+.endc
+.end

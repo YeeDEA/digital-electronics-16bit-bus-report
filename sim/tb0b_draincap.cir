@@ -1,0 +1,44 @@
+* TB-0b: drain capacitance extraction (report §1.2)
+* same as TB-0a but the signal drives the DUT DRAIN (gate/source/bulk tied to rail)
+.include 45nm_HP.pm
+.param VDD=1.1
+
+.subckt inv in out vdd vss
+MP out in vdd vdd pmos W=2.2u L=45n
+MN out in vss vss nmos W=1.1u L=45n
+.ends
+
+VDD vdd 0 {VDD}
+VIN in  0 PULSE(0 {VDD} 1n 20p 20p 2n 4n)
+
+* chain A: DUT nmos drain load (G/S/B -> VSS, drain -> outA)
+XA1 in  a1   vdd 0 inv
+XA2 a1  a2   vdd 0 inv
+XA3 a2  outA vdd 0 inv
+MDUTN outA 0 0 0 nmos W=1.1u L=45n
+
+* chain B: reference ideal cap
+XB1 in  b1   vdd 0 inv
+XB2 b1  b2   vdd 0 inv
+XB3 b2  outB vdd 0 inv
+CL  outB 0 0.5f
+
+* chain C: DUT pmos drain load (G/S/B -> VDD, drain -> outC)
+XC1 in  c1   vdd 0 inv
+XC2 c1  c2   vdd 0 inv
+XC3 c2  outC vdd 0 inv
+MDUTP outC vdd vdd vdd pmos W=2.2u L=45n
+
+.tran 1p 12n
+
+.control
+echo "CG(fF)  trA(nmos)  trB(cap)  trC(pmos)  [ps]"
+foreach cg 0.2f 0.4f 0.6f 0.8f 1.0f 1.2f 1.4f 1.6f 1.8f 2.0f
+  alter CL $cg
+  run
+  meas tran trA TRIG v(outA) VAL=0.22 RISE=2 TARG v(outA) VAL=0.88 RISE=2
+  meas tran trB TRIG v(outB) VAL=0.22 RISE=2 TARG v(outB) VAL=0.88 RISE=2
+  meas tran trC TRIG v(outC) VAL=0.22 RISE=2 TARG v(outC) VAL=0.88 RISE=2
+end
+.endc
+.end

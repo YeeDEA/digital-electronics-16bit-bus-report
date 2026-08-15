@@ -1,0 +1,48 @@
+* TB-4: repeated wire with N=4 segments (report §3.4~3.5)
+* l=200um split into 4 x 50um. Per segment: R=5k, C=10fF. Repeaters = 2-stage inverters.
+* To sweep N, change SEG_R / SEG_C and the number of segment subckt calls.
+.include 45nm_HP.pm
+.param VDD=1.1
+
+.subckt inv in out vdd vss m=1
+MP out in vdd vdd pmos W={2.2u*m} L=45n
+MN out in vss vss nmos W={1.1u*m} L=45n
+.ends
+
+* one 50um wire segment as 3-piece pi ladder (R total 5k, C total 10f)
+.subckt wseg a b
+R1 a  m1 1.667k
+R2 m1 m2 1.667k
+R3 m2 b  1.667k
+C0 a  0 1.667f
+C1 m1 0 3.333f
+C2 m2 0 3.333f
+C3 b  0 1.667f
+.ends
+
+* repeater = two inverters (same drive strength as the driver, m=2)
+.subckt rpt in out vdd vss
+Xa in  mid vdd vss inv m=2
+Xb mid out vdd vss inv m=2
+.ends
+
+VDD vdd 0 {VDD}
+VIN in 0 PULSE(0 {VDD} 1n 20p 20p 4n 8n)
+
+X1 in  n1  vdd 0 inv
+X2 n1  drv vdd 0 inv m=2       ; driver
+
+XW1 drv  s1 wseg
+XR1 s1   d2 rpt vdd 0
+XW2 d2   s2 wseg
+XR2 s2   d3 rpt vdd 0
+XW3 d3   s3 wseg
+XR3 s3   d4 rpt vdd 0
+XW4 d4   rcv wseg
+Crcv rcv 0 7.226f              ; receiver input cap
+
+.tran 1p 20n
+.meas tran tpdr TRIG v(n1) VAL=0.55 FALL=2 TARG v(rcv) VAL=0.55 RISE=2
+.meas tran tpdf TRIG v(n1) VAL=0.55 RISE=2 TARG v(rcv) VAL=0.55 FALL=2
+.meas tran tpd  PARAM='(tpdr+tpdf)/2'
+.end

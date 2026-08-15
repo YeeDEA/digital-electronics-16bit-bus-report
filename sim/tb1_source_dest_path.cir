@@ -1,0 +1,42 @@
+* TB-1: critical path of the 16-bit bus system (report §2.5~2.6)
+* Structure #9: NAND2 - NOR2 - NAND4 - NOR2 - [NAND3-NAND4] - [NAND3-NAND4]  (8 stages)
+* Widths follow report Table 2.4. Load = 100fF (project condition).
+.include 45nm_HP.pm
+.include lib_gates.sp
+.param VDD=1.1
+
+VDD vdd 0 {VDD}
+VSSS vss 0 0
+
+* critical input c (stage-1 input), other inputs held at the non-controlling value
+VC   c    0 PULSE(0 {VDD} 1n 20p 20p 4n 8n)
+VONE one  0 {VDD}
+VZERO zero 0 0
+
+* --- stage 1: NAND2 (wn=2.18u, wp=2.18u) ---
+X1 c one n1 vdd vss NAND2 wn=2.18u wp=2.18u
+
+* --- stage 2: NOR2 (wn=2.31u, wp=9.24u), c-path on the input closest to output ---
+X2 zero n1 n2 vdd vss NOR2 wn=2.31u wp=9.24u
+
+* --- stage 3: NAND4 (wn=16.35u, wp=8.18u) ---
+X3 n2 one one one n3 vdd vss NAND4 wn=16.35u wp=8.18u
+
+* --- stage 4: NOR2 driver (wn=0.54u, wp=2.16u) ---
+X4 zero n3 n4 vdd vss NOR2 wn=0.54u wp=2.16u
+
+* --- stages 5-6: MUX4 #1 (NAND3 wn=3.44u/wp=2.29u, NAND4 wn=8.08u/wp=4.04u) ---
+X5 n4 one one n5 vdd vss NAND3 wn=3.44u wp=2.29u
+X6 n5 one one one n6 vdd vss NAND4 wn=8.08u wp=4.04u
+
+* --- stages 7-8: MUX4 #2 (NAND3 wn=12.79u/wp=8.52u, NAND4 wn=30.21u/wp=14.84u) ---
+X7 n6 one one n7 vdd vss NAND3 wn=12.79u wp=8.52u
+X8 n7 one one one out vdd vss NAND4 wn=30.21u wp=14.84u
+
+CLOAD out 0 100f
+
+.tran 1p 24n
+.meas tran tpdr TRIG v(c) VAL=0.55 RISE=2 TARG v(out) VAL=0.55 RISE=2
+.meas tran tpdf TRIG v(c) VAL=0.55 FALL=2 TARG v(out) VAL=0.55 FALL=2
+.meas tran tpd  PARAM='(tpdr+tpdf)/2'
+.end

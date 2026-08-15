@@ -1,0 +1,51 @@
+name: verify
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  design-checks:
+    name: 설계 계산 검증
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: logical effort 계산 검산
+        run: python tools/logical_effort.py --check
+
+      - name: wire / repeater 분석
+        run: python tools/wire_analysis.py
+
+      - name: 회귀 테스트
+        run: python tools/test_design.py
+
+  spice-netlists:
+    name: SPICE netlist 문법 확인
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ngspice 설치
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ngspice
+
+      - name: netlist 구조 점검
+        run: |
+          fail=0
+          for f in sim/*.cir; do
+            echo "--- $f"
+            # .end로 끝나는지, 참조하는 서브서킷이 정의/포함되어 있는지 확인
+            grep -qi '^\.end' "$f" || { echo "  .end 누락"; fail=1; }
+            grep -qi '45nm_HP.pm' "$f" || { echo "  모델 include 누락"; fail=1; }
+          done
+          exit $fail
+        # 실제 시뮬레이션은 PTM 모델 파일(라이선스상 미포함)이 필요하므로
+        # CI에서는 netlist 구조만 점검한다.

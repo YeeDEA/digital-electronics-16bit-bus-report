@@ -1,0 +1,37 @@
+* TB-0a: gate capacitance extraction by slope matching (report §1.1)
+* chain A output loaded by DUT nMOS gate / chain B loaded by ideal cap CG (swept)
+.include 45nm_HP.pm
+.param VDD=1.1
+
+.subckt inv in out vdd vss
+MP out in vdd vdd pmos W=2.2u L=45n
+MN out in vss vss nmos W=1.1u L=45n
+.ends
+
+VDD vdd 0 {VDD}
+VIN in  0 PULSE(0 {VDD} 1n 20p 20p 2n 4n)
+
+* chain A: 3-inv input shaping + DUT nmos gate load (D/S/B tied to VSS)
+XA1 in  a1   vdd 0 inv
+XA2 a1  a2   vdd 0 inv
+XA3 a2  outA vdd 0 inv
+MDUT 0 outA 0 0 nmos W=1.1u L=45n
+
+* chain B: 3-inv input shaping + ideal cap
+XB1 in  b1   vdd 0 inv
+XB2 b1  b2   vdd 0 inv
+XB3 b2  outB vdd 0 inv
+CL  outB 0 0.2f
+
+.tran 1p 12n
+
+.control
+echo "CG(fF)  trA(ps)  trB(ps)   -> pick CG where trA ~= trB"
+foreach cg 0.1f 0.2f 0.3f 0.4f 0.5f 0.6f 0.7f 0.8f 0.9f 1.0f
+  alter CL $cg
+  run
+  meas tran trA TRIG v(outA) VAL=0.22 RISE=2 TARG v(outA) VAL=0.88 RISE=2
+  meas tran trB TRIG v(outB) VAL=0.22 RISE=2 TARG v(outB) VAL=0.88 RISE=2
+end
+.endc
+.end

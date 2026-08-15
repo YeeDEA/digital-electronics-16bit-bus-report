@@ -1,0 +1,31 @@
+* TB-3: non-repeated wire, 3-segment pi model (report §3.2~3.3)
+* l=200um, Rw=100 ohm/um (total 20k), Cw=0.2fF/um (total 40fF), Crcv=7.226fF
+.include 45nm_HP.pm
+.param VDD=1.1
+
+.subckt inv in out vdd vss m=1
+MP out in vdd vdd pmos W={2.2u*m} L=45n
+MN out in vss vss nmos W={1.1u*m} L=45n
+.ends
+
+VDD vdd 0 {VDD}
+VIN in 0 PULSE(0 {VDD} 1n 20p 20p 4n 8n)
+
+X1 in  n1  vdd 0 inv
+X2 n1  drv vdd 0 inv m=2       ; driver (report: NOR2-equivalent strength)
+
+* 3-segment pi ladder (per segment: R=6.667k, C/2=6.667f at both ends)
+Rw1 drv w1  6.667k
+Rw2 w1  w2  6.667k
+Rw3 w2  rcv 6.667k
+Cp0 drv 0  6.667f
+Cp1 w1  0 13.333f
+Cp2 w2  0 13.333f
+Cp3 rcv 0  6.667f
+Crcv rcv 0 7.226f              ; receiver input cap
+
+.tran 1p 20n
+.meas tran tpdr TRIG v(n1) VAL=0.55 FALL=2 TARG v(rcv) VAL=0.55 RISE=2
+.meas tran tpdf TRIG v(n1) VAL=0.55 RISE=2 TARG v(rcv) VAL=0.55 FALL=2
+.meas tran tpd  PARAM='(tpdr+tpdf)/2'
+.end

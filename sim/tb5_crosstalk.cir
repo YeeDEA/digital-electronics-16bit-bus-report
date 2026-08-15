@@ -1,0 +1,67 @@
+* TB-5: capacitive crosstalk, Miller effect 3 cases (report §3.6)
+* Two adjacent wires A/B coupled by Cadj = 0.3fF/um x 200um = 60fF (20f per node x3)
+* CASE is set by the .control block: 1 = same direction, 2 = B quiet, 3 = opposite
+.include 45nm_HP.pm
+.param VDD=1.1
+
+.subckt inv in out vdd vss m=1
+MP out in vdd vdd pmos W={2.2u*m} L=45n
+MN out in vss vss nmos W={1.1u*m} L=45n
+.ends
+
+VDD vdd 0 {VDD}
+
+* line A stimulus: always 0->1 rising
+VA ina 0 PULSE(0 {VDD} 1n 20p 20p 8n 16n)
+* line B stimulus: overwritten per case in .control
+VB inb 0 PULSE(0 {VDD} 1n 20p 20p 8n 16n)
+
+XA1 ina  da vdd 0 inv m=2
+XB1 inb  db vdd 0 inv m=2
+
+* line A ladder
+RA1 da  aw1 6.667k
+RA2 aw1 aw2 6.667k
+RA3 aw2 arc 6.667k
+CA0 da  0  6.667f
+CA1 aw1 0 13.333f
+CA2 aw2 0 13.333f
+CA3 arc 0  6.667f
+CAr arc 0 7.226f
+
+* line B ladder
+RB1 db  bw1 6.667k
+RB2 bw1 bw2 6.667k
+RB3 bw2 brc 6.667k
+CB0 db  0  6.667f
+CB1 bw1 0 13.333f
+CB2 bw2 0 13.333f
+CB3 brc 0  6.667f
+CBr brc 0 7.226f
+
+* coupling caps between the two lines (Cadj total 60fF)
+CC1 aw1 bw1 20f
+CC2 aw2 bw2 20f
+CC3 arc brc 20f
+
+.tran 1p 40n
+
+.control
+echo "=== case 1: B switches in the same direction (C_eff = Cgnd) ==="
+alter @VB[pulse] = [ 0 1.1 1n 20p 20p 8n 16n ]
+run
+meas tran tr_case1 TRIG v(arc) VAL=0.22 RISE=1 TARG v(arc) VAL=0.88 RISE=1
+
+echo "=== case 2: B quiet at 0 (C_eff = Cgnd + Cadj) ==="
+alter @VB[pulse] = [ 0 0 1n 20p 20p 8n 16n ]
+run
+meas tran tr_case2 TRIG v(arc) VAL=0.22 RISE=1 TARG v(arc) VAL=0.88 RISE=1
+
+echo "=== case 3: B switches in the opposite direction (C_eff = Cgnd + 2Cadj) ==="
+alter @VB[pulse] = [ 1.1 0 1n 20p 20p 8n 16n ]
+run
+meas tran tr_case3 TRIG v(arc) VAL=0.22 RISE=1 TARG v(arc) VAL=0.88 RISE=1
+
+echo "expected trend: tr_case1 < tr_case2 < tr_case3 (ratio follows C_eff)"
+.endc
+.end
