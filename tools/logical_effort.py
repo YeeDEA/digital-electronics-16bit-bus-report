@@ -14,6 +14,11 @@ from __future__ import annotations
 
 import argparse
 import sys
+
+# 한글 Windows(cp949) 콘솔에서도 출력이 깨지거나 죽지 않도록 강제한다.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 from dataclasses import dataclass
 
 # ── 측정으로 얻은 기초 상수 (보고서 1장) ──────────────────────────────
