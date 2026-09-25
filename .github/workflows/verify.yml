@@ -49,3 +49,20 @@ jobs:
           exit $fail
         # 실제 시뮬레이션은 PTM 모델 파일(라이선스상 미포함)이 필요하므로
         # CI에서는 netlist 구조만 점검한다.
+
+  rtl-vs-reference:
+    name: RTL vs reference model (Icarus Verilog)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Icarus Verilog 설치
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y iverilog
+
+      - name: 자기검증 테스트벤치 (directed + random 21,632 vectors)
+        run: |
+          iverilog -g2012 -o tb_bus.vvp rtl/bus_source.sv rtl/bus_destination.sv rtl/bus_top.sv verif/bus_ref_model.sv verif/tb_bus.sv
+          vvp tb_bus.vvp | tee sim.log
+          grep -q "^PASS" sim.log
